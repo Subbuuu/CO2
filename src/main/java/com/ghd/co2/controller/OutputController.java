@@ -27,4 +27,9 @@ public class OutputController {
 		ResponseDTO<List<OutputJson>> status = outputService.extractOutputData();
 		return status;	
 	}
+	
+	@GetMapping("/downloadBlob")
+	public String downloadBlob() {
+		return outputService.downloadBlob();
+	}
 }

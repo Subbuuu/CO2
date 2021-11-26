@@ -9,4 +9,5 @@ public interface OutputService {
 
 	ResponseDTO<List<OutputJson>> extractOutputData();
 
+	String downloadBlob();
 }

@@ -2,6 +2,7 @@ package com.ghd.co2.serviceimpl;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.List;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 import com.ghd.co2.dto.ResponseDTO;
@@ -20,6 +22,11 @@ import com.ghd.co2.repository.LabelsRepository;
 import com.ghd.co2.service.OutputService;
 import com.ghd.co2.vo.Dataset;
 import com.ghd.co2.vo.OutputJson;
+import com.microsoft.azure.storage.CloudStorageAccount;
+import com.microsoft.azure.storage.blob.CloudBlob;
+import com.microsoft.azure.storage.blob.CloudBlobClient;
+import com.microsoft.azure.storage.blob.CloudBlobContainer;
+import com.microsoft.azure.storage.blob.ListBlobItem;
 
 @Service
 public class OutputServiceImpl implements OutputService {
@@ -33,6 +40,9 @@ public class OutputServiceImpl implements OutputService {
 	@Autowired
 	ColourRepository colourRepository;
 	
+	@Autowired
+	Environment env;
+	
 	@Override
 	public ResponseDTO<List<OutputJson>> extractOutputData() {
 		
@@ -44,7 +54,9 @@ public class OutputServiceImpl implements OutputService {
 		
 		try {
 			
-			FileInputStream fis = new FileInputStream(new File("D:\\GHD\\Test\\Abatement_Option_sheet_template_copy.xlsx"));
+			String location = this.downloadBlob();
+			
+			FileInputStream fis = new FileInputStream(new File(location  + "\\Abatement_Option_sheet_template.xlsx"));
 
 			XSSFWorkbook wb = new XSSFWorkbook(fis);
 		
@@ -93,10 +105,35 @@ public class OutputServiceImpl implements OutputService {
 			return response;
 			
 		} catch (Exception e) {
-			response.setMessage("-- saveInputLookupValues Failed - " + e.getMessage() + " --");
+			response.setMessage("-- extractOutputData Failed - " + e.getMessage() + " --");
 			return response;
 		}
 	
+	}
+
+	@Override
+	public String downloadBlob() {
+		try
+		{
+			String storageConnectionString = "DefaultEndpointsProtocol=https;AccountName=bridgei2i;AccountKey=WoaPYIJaWX2n/9HBTGO26U9K2u7p00g+iF5eWhqBszNtwFErg5pHXSLSn9JElGgsLdk7zM0E8c1vC9OYiJ/wNw==;EndpointSuffix=core.windows.net";
+			CloudStorageAccount storageAccount = CloudStorageAccount.parse(storageConnectionString );
+			CloudBlobClient blobClient = storageAccount.createCloudBlobClient();
+			CloudBlobContainer container = blobClient.getContainerReference("co2");
+			String home = env.getProperty("TEMP");
+			for (ListBlobItem blobItem : container.listBlobs()) {
+		       if (blobItem instanceof CloudBlob) {
+		            CloudBlob blob = (CloudBlob) blobItem;
+			        blob.download(new FileOutputStream(home + "\\" + blob.getName()));
+			    }
+			}
+			return(home);
+		}
+		
+		catch (Exception e)
+		{
+		    e.printStackTrace();
+		    return("Failure " + e.getMessage());
+		}
 	}
 
 }

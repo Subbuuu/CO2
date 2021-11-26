@@ -21,40 +21,47 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.ghd.co2.dto.ResponseDTO;
 import com.ghd.co2.service.DataLoadService;
+import com.ghd.co2.service.OutputService;
 
 @Service
 public class DataLoadServiceImpl implements DataLoadService {
 
+	@Autowired
+	OutputService outputService;
+	
 	@Override
 	public ResponseDTO<ResponseEntity<String>> saveUserInputData(List<Map<String, String>> userInputResponseJson) throws IOException, FileNotFoundException {
 		
 		ResponseDTO<ResponseEntity<String>> response = new ResponseDTO<ResponseEntity<String>>();
 		
 		try {	
-		 FileSystem system = FileSystems.getDefault();
-	     Path original = system.getPath("D:\\GHD\\Test\\Abatement_Option_sheet_template.xlsx");
-         Path target = system.getPath("D:\\GHD\\Test\\Abatement_Option_sheet_template_copy.xlsx");
-
-	        try {
-	            // Throws an exception if the original file is not found.
-	            Files.copy(original, target, StandardCopyOption.REPLACE_EXISTING);
-	        } catch (IOException ex) {
-	            System.out.println("ERROR");
-	        }
+		 String location = outputService.downloadBlob();
+		 
+//		 FileSystem system = FileSystems.getDefault();
+//	     Path original = system.getPath(location + "Abatement_Option_sheet_template.xlsx");
+//         Path target = system.getPath("D:\\GHD\\Test\\Abatement_Option_sheet_template_copy.xlsx");
+//
+//	        try {
+//	            // Throws an exception if the original file is not found.
+//	            Files.copy(original, target, StandardCopyOption.REPLACE_EXISTING);
+//	        } catch (IOException ex) {
+//	            System.out.println("ERROR");
+//	        }
 	        
-	        FileInputStream fis = new FileInputStream(new File("D:\\GHD\\Test\\Abatement_Option_sheet_template_copy.xlsx"));
+	        FileInputStream fis = new FileInputStream(new File(location + "\\Abatement_Option_sheet_template.xlsx"));
 
 			XSSFWorkbook wb = new XSSFWorkbook(fis); 
 
 			XSSFSheet sheet = wb.getSheetAt(2);
 
-			BufferedReader reader = new BufferedReader(new FileReader("D:\\GHD\\Test\\JSON_Template.txt"));
+			BufferedReader reader = new BufferedReader(new FileReader(location + "\\JSON_Template.txt"));
 			String json = "";
 			try {
 				StringBuilder sb = new StringBuilder();
@@ -123,7 +130,7 @@ public class DataLoadServiceImpl implements DataLoadService {
 				}
 			}
 			
-			FileOutputStream outputStream = new FileOutputStream("D:\\GHD\\Test\\Abatement_Option_sheet_template_copy.xlsx"); 
+			FileOutputStream outputStream = new FileOutputStream(location + "\\Abatement_Option_sheet_template.xlsx"); 
 			wb.write(outputStream);
 			
 			response.setMessage("Success");
